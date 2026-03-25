@@ -30,8 +30,8 @@ export async function stopBot() {
 
 const defaultTexts = {
   ru: {
-    welcome: '👋 Здравствуйте, <b>{name}</b>!\n\nДобро пожаловать в кастинг <b>Dinay Brandface</b>! 🌟\n\nПожалуйста, внимательно ознакомьтесь с прикрепленным договором публичной оферты. 📄\n\nВы согласны с условиями?',
-    agree: '✅ Согласен(на)',
+    welcome: '👋 Здравствуйте, <b>{name}</b>!\n\nДобро пожаловать в кастинг <b>Dinay Brandface</b>! 🌟\n\n❗️ <b>Важное условие:</b> Знание русского и узбекского языков должно быть на 100%.\n\nВы готовы продолжить и заполнить анкету?',
+    agree: '✅ Продолжить',
     ask_name: 'Отлично! 🎉\n\nПожалуйста, отправьте ваши <b>Имя и Фамилию</b> текстовым сообщением. ✍️',
     ask_age_city: 'Супер! Теперь укажите ваш <b>возраст</b> и <b>город проживания</b>. 🏙️\n\n<i>Пример: 22, Ташкент</i>',
     ask_social: 'Отправьте ссылку на ваш профиль <b>Instagram</b> или <b>TikTok</b>. 📱',
@@ -44,8 +44,8 @@ const defaultTexts = {
     rejected: '😔 <b>Здравствуйте, {name}.</b>\n\nК сожалению, ваша заявка была отклонена. Спасибо за проявленный интерес и участие! Желаем успехов в будущем. 🌟'
   },
   uz: {
-    welcome: '👋 Assalomu alaykum, <b>{name}</b>!\n\n<b>Dinay Brandface</b> kastingiga xush kelibsiz! 🌟\n\nIltimos, biriktirilgan ommaviy ofera shartnomasi bilan diqqat bilan tanishib chiqing. 📄\n\nShartlarga rozimisiz?',
-    agree: '✅ Roziman',
+    welcome: '👋 Assalomu alaykum, <b>{name}</b>!\n\n<b>Dinay Brandface</b> kastingiga xush kelibsiz! 🌟\n\n❗️ <b>Muhim shart:</b> Rus va o\'zbek tillarini 100% bilish talab etiladi.\n\nDavom etishga va anketani to\'ldirishga tayyormisiz?',
+    agree: '✅ Davom etish',
     ask_name: 'Ajoyib! 🎉\n\nIltimos, <b>Ism va Familiyangizni</b> matnli xabar orqali yuboring. ✍️',
     ask_age_city: 'Super! Endi <b>yoshingizni</b> va <b>yashash shahringizni</b> kiriting. 🏙️\n\n<i>Misol: 22, Toshkent</i>',
     ask_social: '<b>Instagram</b> yoki <b>TikTok</b> profilingiz havolasini yuboring. 📱',
@@ -148,23 +148,9 @@ export async function initBot(token: string) {
       await ctx.answerCallbackQuery();
       await ctx.deleteMessage().catch(() => {});
       
-      const contractContent = lang === 'ru' 
-        ? 'Договор публичной оферты Dinay Brandface...\n\n1. Общие положения\n2. Права и обязанности сторон\n(Здесь должен быть полный текст вашего договора)' 
-        : 'Dinay Brandface ommaviy ofera shartnomasi...\n\n1. Umumiy qoidalar\n2. Tomonlarning huquq va majburiyatlari\n(Bu yerda shartnomaning to\'liq matni bo\'lishi kerak)';
-        
-      let documentToSend;
-      try {
-        // Попытка отправить реальный файл, если он загружен
-        documentToSend = new InputFile('./Договор BRANDFACE_UZB&RUS (финал).docx');
-      } catch (e) {
-        // Если файла нет, отправляем заглушку
-        documentToSend = new InputFile(Buffer.from(contractContent), lang === 'ru' ? 'Dogovor_Dinay.txt' : 'Shartnoma_Dinay.txt');
-      }
-        
-      await ctx.replyWithDocument(
-        documentToSend,
+      await ctx.reply(
+        getText(lang, 'welcome', { name: safeName }),
         {
-          caption: getText(lang, 'welcome', { name: safeName }),
           parse_mode: 'HTML',
           reply_markup: {
             inline_keyboard: [
@@ -172,22 +158,7 @@ export async function initBot(token: string) {
             ]
           }
         }
-      ).catch(async (err) => {
-        // Fallback if the file doesn't exist or fails to send
-        console.error("Failed to send docx, sending fallback txt", err);
-        await ctx.replyWithDocument(
-          new InputFile(Buffer.from(contractContent), lang === 'ru' ? 'Dogovor_Dinay.txt' : 'Shartnoma_Dinay.txt'),
-          {
-            caption: getText(lang, 'welcome', { name: safeName }),
-            parse_mode: 'HTML',
-            reply_markup: {
-              inline_keyboard: [
-                [{ text: getText(lang, 'agree'), callback_data: 'agree' }]
-              ]
-            }
-          }
-        );
-      });
+      );
     } else if (data === 'agree') {
       const lang = ctx.session.language || 'ru';
       ctx.session.step = 3;
