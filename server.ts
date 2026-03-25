@@ -17,7 +17,7 @@ async function startServer() {
   app.use(cors());
   app.use(express.json());
 
-  initDb();
+  await initDb();
 
   // Hardcoded bot token as requested by the user
   const BOT_TOKEN = '8739742447:AAHrHEYWdn3-f6oBE2IWNkDU7PpO62pquZs';
