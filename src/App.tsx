@@ -182,9 +182,9 @@ export default function App() {
                   type="password"
                   value={token}
                   onChange={(e) => setToken(e.target.value)}
-                  placeholder="123456789:ABCdefGHIjklMNOpqrsTUVwxyz"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
-                  disabled={isRunning}
+                  placeholder="Токен встроен в код (автозапуск)"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 bg-gray-50"
+                  disabled={true}
                 />
               </div>
               {isRunning ? (
@@ -197,7 +197,17 @@ export default function App() {
                 </button>
               ) : (
                 <button
-                  onClick={handleStart}
+                  onClick={() => {
+                    // Start with hardcoded token
+                    fetch('/api/start-bot', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ token: '8739742447:AAHrHEYWdn3-f6oBE2IWNkDU7PpO62pquZs' })
+                    }).then(res => {
+                      if (res.ok) setIsRunning(true);
+                      else res.json().then(data => alert(data.error));
+                    });
+                  }}
                   className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
                 >
                   <Play className="w-4 h-4" />
