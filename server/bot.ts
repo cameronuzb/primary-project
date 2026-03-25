@@ -83,6 +83,23 @@ export async function initBot(token: string) {
   
   bot.use(session({ initial: () => ({ step: 0 }) }));
   
+  // Восстанавливаем сессию из базы данных, если она пустая (например, после перезапуска сервера)
+  bot.use(async (ctx, next) => {
+    if (ctx.from?.id) {
+      const user = await getUser(ctx.from.id) as any;
+      if (user && ctx.session.step === 0 && user.step > 0) {
+        ctx.session.step = user.step;
+        ctx.session.language = user.language || user.lang || 'ru';
+        ctx.session.fullName = user.full_name;
+        ctx.session.ageCity = user.age_city;
+        ctx.session.socialLink = user.social_link;
+        ctx.session.photoFileId = user.photo_file_id;
+        ctx.session.videoFileId = user.video_file_id;
+      }
+    }
+    await next();
+  });
+  
   bot.command('start', async (ctx) => {
     const utm = ctx.match || '';
     const userId = ctx.from?.id;
@@ -171,13 +188,16 @@ export async function initBot(token: string) {
           }
         );
       });
-    } else if (data === 'agree' && ctx.session.step === 2) {
+    } else if (data === 'agree') {
       const lang = ctx.session.language || 'ru';
       ctx.session.step = 3;
       await updateUser(userId, { step: 3 });
       
       await ctx.answerCallbackQuery();
-      await ctx.editMessageText(getText(lang, 'ask_name'), { parse_mode: 'HTML' });
+      // Убираем кнопку "Согласен", чтобы нельзя было нажать дважды
+      await ctx.editMessageReplyMarkup({ reply_markup: { inline_keyboard: [] } }).catch(() => {});
+      // Отправляем следующий вопрос новым сообщением
+      await ctx.reply(getText(lang, 'ask_name'), { parse_mode: 'HTML' });
     }
   });
 
@@ -189,17 +209,17 @@ export async function initBot(token: string) {
     if (step === 3) {
       ctx.session.fullName = ctx.message.text;
       ctx.session.step = 4;
-      await updateUser(userId, { step: 4 });
+      await updateUser(userId, { step: 4, full_name: ctx.message.text });
       await ctx.reply(getText(lang, 'ask_age_city'), { parse_mode: 'HTML' });
     } else if (step === 4) {
       ctx.session.ageCity = ctx.message.text;
       ctx.session.step = 5;
-      await updateUser(userId, { step: 5 });
+      await updateUser(userId, { step: 5, age_city: ctx.message.text });
       await ctx.reply(getText(lang, 'ask_social'), { parse_mode: 'HTML' });
     } else if (step === 5) {
       ctx.session.socialLink = ctx.message.text;
       ctx.session.step = 6;
-      await updateUser(userId, { step: 6 });
+      await updateUser(userId, { step: 6, social_link: ctx.message.text });
       await ctx.reply(getText(lang, 'ask_photo'), { parse_mode: 'HTML' });
     }
   });
@@ -212,7 +232,7 @@ export async function initBot(token: string) {
     if (step === 6) {
       ctx.session.photoFileId = ctx.message.photo[ctx.message.photo.length - 1].file_id;
       ctx.session.step = 7;
-      await updateUser(userId, { step: 7 });
+      await updateUser(userId, { step: 7, photo_file_id: ctx.session.photoFileId });
       await ctx.reply(getText(lang, 'ask_video'), { parse_mode: 'HTML' });
     }
   });
@@ -225,7 +245,7 @@ export async function initBot(token: string) {
     if (step === 7) {
       ctx.session.videoFileId = ctx.message.video?.file_id || ctx.message.video_note?.file_id;
       ctx.session.step = 8;
-      await updateUser(userId, { step: 8 });
+      await updateUser(userId, { step: 8, video_file_id: ctx.session.videoFileId });
       
       await createApplication({
         user_id: userId,
@@ -260,6 +280,9 @@ export async function initBot(token: string) {
       console.log(`Bot started as @${botInfo.username}`);
       isRunning = true;
     }
+  }).catch((err) => {
+    console.error('Failed to start polling:', err);
+    isRunning = false;
   });
 }
 
