@@ -1,0 +1,72 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "A Telegram user interacting with the bot",
+      "type": "object",
+      "properties": {
+        "id": { "type": "number" },
+        "username": { "type": "string" },
+        "language": { "type": "string" },
+        "utm_source": { "type": "string" },
+        "step": { "type": "number" },
+        "joined_at": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "step"]
+    },
+    "Application": {
+      "title": "Application",
+      "description": "A casting application submitted by a user",
+      "type": "object",
+      "properties": {
+        "user_id": { "type": "number" },
+        "full_name": { "type": "string" },
+        "age_city": { "type": "string" },
+        "social_link": { "type": "string" },
+        "photo_file_id": { "type": "string" },
+        "video_file_id": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "approved", "rejected"] },
+        "created_at": { "type": "string", "format": "date-time" }
+      },
+      "required": ["user_id", "status"]
+    },
+    "Admin": {
+      "title": "Admin",
+      "description": "An admin user",
+      "type": "object",
+      "properties": {
+        "id": { "type": "number" },
+        "role": { "type": "string" }
+      },
+      "required": ["id", "role"]
+    },
+    "Setting": {
+      "title": "Setting",
+      "description": "A global setting",
+      "type": "object",
+      "properties": {
+        "key": { "type": "string" },
+        "value": { "type": "string" }
+      },
+      "required": ["key", "value"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/User" },
+      "description": "Users interacting with the bot"
+    },
+    "/applications/{applicationId}": {
+      "schema": { "$ref": "#/entities/Application" },
+      "description": "Casting applications"
+    },
+    "/admins/{adminId}": {
+      "schema": { "$ref": "#/entities/Admin" },
+      "description": "Admin users"
+    },
+    "/settings/{settingId}": {
+      "schema": { "$ref": "#/entities/Setting" },
+      "description": "Global settings"
+    }
+  }
+}
