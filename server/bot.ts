@@ -95,7 +95,7 @@ export async function initBot(token: string) {
           username,
           utm_source: utm,
           step: 1,
-          joined_at: new Date()
+          joined_at: new Date().toISOString()
         });
       } else {
         await updateUser(userId, { step: 1 });
@@ -273,11 +273,11 @@ export async function notifyUser(userId: number, status: 'approved' | 'rejected'
   if (!bot || !isRunning) return;
   
   try {
-    const user = await getUser(userId);
+    const user = await getUser(userId) as any;
     const apps = await getApplications();
     const app = apps.find(a => a.user_id === userId);
     
-    const lang = (user?.language || 'ru') as 'ru' | 'uz';
+    const lang = (user?.lang || user?.language || 'ru') as 'ru' | 'uz';
     const safeName = (app?.full_name || 'Участник').replace(/</g, '&lt;').replace(/>/g, '&gt;');
     
     await bot.api.sendMessage(userId, getText(lang, status, { name: safeName }), { parse_mode: 'HTML' });
