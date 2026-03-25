@@ -256,6 +256,40 @@ export async function initBot(token: string) {
         video_file_id: ctx.session.videoFileId
       });
       
+      // Отправка уведомления в группу
+      try {
+        const groupId = '-5208437302';
+        const username = ctx.from?.username;
+        const userLink = username ? `@${username}` : `<a href="tg://user?id=${userId}">Пользователь (ID: ${userId})</a>`;
+        
+        const notifyText = `🆕 <b>Новая заявка!</b>\n\n` +
+          `👤 <b>ФИО:</b> ${ctx.session.fullName}\n` +
+          `🏙 <b>Возраст/Город:</b> ${ctx.session.ageCity}\n` +
+          `📱 <b>Соцсеть:</b> ${ctx.session.socialLink}\n` +
+          `💬 <b>Telegram:</b> ${userLink}`;
+
+        // Отправляем фото с текстом
+        if (ctx.session.photoFileId) {
+          await ctx.api.sendPhoto(groupId, ctx.session.photoFileId, {
+            caption: notifyText,
+            parse_mode: 'HTML'
+          });
+        } else {
+          await ctx.api.sendMessage(groupId, notifyText, { parse_mode: 'HTML' });
+        }
+        
+        // Отправляем видео или кружочек
+        if (ctx.session.videoFileId) {
+          if (ctx.message.video_note) {
+            await ctx.api.sendVideoNote(groupId, ctx.session.videoFileId);
+          } else {
+            await ctx.api.sendVideo(groupId, ctx.session.videoFileId);
+          }
+        }
+      } catch (err) {
+        console.error('Ошибка при отправке в группу:', err);
+      }
+      
       await ctx.reply(getText(lang, 'done'), { parse_mode: 'HTML' });
     }
   });
