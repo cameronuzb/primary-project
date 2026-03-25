@@ -19,6 +19,17 @@ async function startServer() {
 
   initDb();
 
+  // Hardcoded bot token as requested by the user
+  const BOT_TOKEN = '8739742447:AAHrHEYWdn3-f6oBE2IWNkDU7PpO62pquZs';
+  
+  // Start the bot automatically
+  try {
+    await initBot(BOT_TOKEN);
+    console.log('Bot started automatically with hardcoded token.');
+  } catch (error) {
+    console.error('Failed to start bot automatically:', error);
+  }
+
   app.get('/api/status', (req, res) => {
     res.json({ running: isBotRunning() });
   });
