@@ -87,7 +87,12 @@ export async function createApplication(data: any) {
 }
 
 export async function getApplications(): Promise<any[]> {
-  const stmt = db.prepare('SELECT * FROM applications ORDER BY created_at DESC');
+  const stmt = db.prepare(`
+    SELECT a.*, u.username 
+    FROM applications a 
+    LEFT JOIN users u ON a.user_id = u.id 
+    ORDER BY a.created_at DESC
+  `);
   return stmt.all();
 }
 
