@@ -1,4 +1,5 @@
 import admin from 'firebase-admin';
+import { getFirestore } from 'firebase-admin/firestore';
 import dotenv from 'dotenv';
 dotenv.config();
 
@@ -7,19 +8,25 @@ let db: admin.firestore.Firestore;
 try {
   if (process.env.FIREBASE_SERVICE_ACCOUNT) {
     const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+    // Extract the project ID from the service account or use the one from config
+    const projectId = serviceAccount.project_id || 'gen-lang-client-0111261486';
+    
     admin.initializeApp({
-      credential: admin.credential.cert(serviceAccount)
+      credential: admin.credential.cert(serviceAccount),
+      projectId: projectId
     });
     console.log('Firebase Admin initialized successfully.');
   } else {
     console.warn('⚠️ FIREBASE_SERVICE_ACCOUNT is not set. Please add your service account JSON to the environment variables.');
     // Initialize without credentials for build purposes (will fail on actual read/write)
-    admin.initializeApp({ projectId: 'demo-project' });
+    admin.initializeApp({ projectId: 'gen-lang-client-0111261486' });
   }
-  db = admin.firestore();
+  
+  // Use the specific database ID from the config
+  db = getFirestore(admin.app(), 'ai-studio-4032ed00-ab85-44d6-ae66-3c09f239a07a');
 } catch (error) {
   console.error('Error initializing Firebase Admin:', error);
-  db = admin.firestore();
+  db = getFirestore(admin.app(), 'ai-studio-4032ed00-ab85-44d6-ae66-3c09f239a07a');
 }
 
 export { db };
