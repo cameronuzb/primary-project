@@ -5,28 +5,36 @@ dotenv.config();
 
 let db: admin.firestore.Firestore;
 
+const AI_STUDIO_PROJECT_ID = 'gen-lang-client-0111261486';
+const AI_STUDIO_DB_ID = 'ai-studio-4032ed00-ab85-44d6-ae66-3c09f239a07a';
+
 try {
+  let projectId = AI_STUDIO_PROJECT_ID;
+  
   if (process.env.FIREBASE_SERVICE_ACCOUNT) {
     const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
-    // Extract the project ID from the service account or use the one from config
-    const projectId = serviceAccount.project_id || 'gen-lang-client-0111261486';
+    projectId = serviceAccount.project_id || AI_STUDIO_PROJECT_ID;
     
     admin.initializeApp({
       credential: admin.credential.cert(serviceAccount),
       projectId: projectId
     });
-    console.log('Firebase Admin initialized successfully.');
+    console.log(`Firebase Admin initialized successfully for project: ${projectId}`);
   } else {
     console.warn('⚠️ FIREBASE_SERVICE_ACCOUNT is not set. Please add your service account JSON to the environment variables.');
-    // Initialize without credentials for build purposes (will fail on actual read/write)
-    admin.initializeApp({ projectId: 'gen-lang-client-0111261486' });
+    admin.initializeApp({ projectId: AI_STUDIO_PROJECT_ID });
   }
   
-  // Use the specific database ID from the config
-  db = getFirestore(admin.app(), 'ai-studio-4032ed00-ab85-44d6-ae66-3c09f239a07a');
+  // If using the AI Studio project, we MUST use the specific database ID.
+  // If using a custom project (like the user's own), use the default database.
+  if (projectId === AI_STUDIO_PROJECT_ID) {
+    db = getFirestore(admin.app(), AI_STUDIO_DB_ID);
+  } else {
+    db = getFirestore(admin.app());
+  }
 } catch (error) {
   console.error('Error initializing Firebase Admin:', error);
-  db = getFirestore(admin.app(), 'ai-studio-4032ed00-ab85-44d6-ae66-3c09f239a07a');
+  db = getFirestore(admin.app());
 }
 
 export { db };
