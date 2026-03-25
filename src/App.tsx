@@ -299,6 +299,7 @@ export default function App() {
                     <tr>
                       <th className="px-6 py-3 font-medium">Дата</th>
                       <th className="px-6 py-3 font-medium">ФИО</th>
+                      <th className="px-6 py-3 font-medium">Telegram</th>
                       <th className="px-6 py-3 font-medium">Возраст/Город</th>
                       <th className="px-6 py-3 font-medium">Соцсети</th>
                       <th className="px-6 py-3 font-medium">Фото</th>
@@ -314,6 +315,17 @@ export default function App() {
                           {format(new Date(app.created_at), 'dd.MM.yyyy HH:mm')}
                         </td>
                         <td className="px-6 py-4 font-medium text-gray-900">{app.full_name}</td>
+                        <td className="px-6 py-4">
+                          {app.username ? (
+                            <a href={`https://t.me/${app.username}`} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                              @{app.username}
+                            </a>
+                          ) : (
+                            <a href={`tg://user?id=${app.user_id}`} className="text-blue-600 hover:underline" title="Работает только если открыто приложение Telegram">
+                              Написать (ID: {app.user_id})
+                            </a>
+                          )}
+                        </td>
                         <td className="px-6 py-4 text-gray-500">{app.age_city}</td>
                         <td className="px-6 py-4">
                           <a href={app.social_link} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
@@ -368,7 +380,7 @@ export default function App() {
                     ))}
                     {(!applications || applications.length === 0) && (
                       <tr>
-                        <td colSpan={8} className="px-6 py-8 text-center text-gray-500">
+                        <td colSpan={9} className="px-6 py-8 text-center text-gray-500">
                           Нет анкет
                         </td>
                       </tr>
