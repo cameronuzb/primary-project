@@ -1,130 +1,144 @@
-import admin from 'firebase-admin';
-import { getFirestore } from 'firebase-admin/firestore';
-import dotenv from 'dotenv';
-dotenv.config();
+import Database from 'better-sqlite3';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
-let db: admin.firestore.Firestore;
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const dbPath = path.join(__dirname, '..', 'database.sqlite');
 
-const AI_STUDIO_PROJECT_ID = 'gen-lang-client-0111261486';
-const AI_STUDIO_DB_ID = 'ai-studio-4032ed00-ab85-44d6-ae66-3c09f239a07a';
+// Initialize SQLite database
+const db = new Database(dbPath);
 
-try {
-  let projectId = AI_STUDIO_PROJECT_ID;
-  
-  if (process.env.FIREBASE_SERVICE_ACCOUNT) {
-    const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
-    projectId = serviceAccount.project_id || AI_STUDIO_PROJECT_ID;
-    
-    admin.initializeApp({
-      credential: admin.credential.cert(serviceAccount),
-      projectId: projectId
-    });
-    console.log(`Firebase Admin initialized successfully for project: ${projectId}`);
-  } else {
-    console.warn('⚠️ FIREBASE_SERVICE_ACCOUNT is not set. Please add your service account JSON to the environment variables.');
-    admin.initializeApp({ projectId: AI_STUDIO_PROJECT_ID });
-  }
-  
-  // If using the AI Studio project, we MUST use the specific database ID.
-  // If using a custom project (like the user's own), use the default database.
-  if (projectId === AI_STUDIO_PROJECT_ID) {
-    db = getFirestore(admin.app(), AI_STUDIO_DB_ID);
-  } else {
-    db = getFirestore(admin.app());
-  }
-} catch (error) {
-  console.error('Error initializing Firebase Admin:', error);
-  db = getFirestore(admin.app());
+// Enable WAL mode for better performance
+db.pragma('journal_mode = WAL');
+
+export function initDb() {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS users (
+      id INTEGER PRIMARY KEY,
+      username TEXT,
+      utm_source TEXT,
+      step INTEGER DEFAULT 0,
+      language TEXT,
+      full_name TEXT,
+      age_city TEXT,
+      social_link TEXT,
+      photo_file_id TEXT,
+      video_file_id TEXT,
+      joined_at DATETIME,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS applications (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER,
+      full_name TEXT,
+      age_city TEXT,
+      social_link TEXT,
+      photo_file_id TEXT,
+      video_file_id TEXT,
+      status TEXT DEFAULT 'pending',
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (user_id) REFERENCES users (id)
+    );
+
+    CREATE TABLE IF NOT EXISTS settings (
+      key TEXT PRIMARY KEY,
+      value TEXT
+    );
+  `);
 }
 
-export { db };
-
-// Helper functions to replace SQLite queries with Firestore operations
 export async function getUser(userId: number) {
-  const doc = await db.collection('users').doc(userId.toString()).get();
-  return doc.exists ? doc.data() : null;
+  const stmt = db.prepare('SELECT * FROM users WHERE id = ?');
+  return stmt.get(userId);
 }
 
 export async function updateUser(userId: number, data: any) {
-  await db.collection('users').doc(userId.toString()).set(data, { merge: true });
+  // Check if user exists
+  const existing = await getUser(userId);
+  
+  if (!existing) {
+    // Insert new user
+    const keys = Object.keys(data);
+    const values = Object.values(data);
+    const placeholders = keys.map(() => '?').join(', ');
+    
+    const stmt = db.prepare(`INSERT INTO users (id, ${keys.join(', ')}) VALUES (?, ${placeholders})`);
+    stmt.run(userId, ...values);
+  } else {
+    // Update existing user
+    const keys = Object.keys(data);
+    const values = Object.values(data);
+    const setClause = keys.map(k => `${k} = ?`).join(', ');
+    
+    const stmt = db.prepare(`UPDATE users SET ${setClause} WHERE id = ?`);
+    stmt.run(...values, userId);
+  }
 }
 
 export async function createApplication(data: any) {
-  const docRef = await db.collection('applications').add({
-    ...data,
-    created_at: admin.firestore.FieldValue.serverTimestamp(),
-    status: 'pending'
-  });
-  return docRef.id;
+  const keys = Object.keys(data);
+  const values = Object.values(data);
+  const placeholders = keys.map(() => '?').join(', ');
+  
+  const stmt = db.prepare(`INSERT INTO applications (${keys.join(', ')}) VALUES (${placeholders})`);
+  const info = stmt.run(...values);
+  return info.lastInsertRowid;
 }
 
 export async function getApplications(): Promise<any[]> {
-  const snapshot = await db.collection('applications').orderBy('created_at', 'desc').get();
-  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  const stmt = db.prepare('SELECT * FROM applications ORDER BY created_at DESC');
+  return stmt.all();
 }
 
-export async function updateApplicationStatus(appId: string, status: string) {
-  await db.collection('applications').doc(appId).update({ status });
+export async function updateApplicationStatus(appId: string | number, status: string) {
+  const stmt = db.prepare('UPDATE applications SET status = ? WHERE id = ?');
+  stmt.run(status, appId);
 }
 
 export async function getStats() {
-  const usersSnapshot = await db.collection('users').count().get();
-  const appsSnapshot = await db.collection('applications').count().get();
+  const totalUsers = db.prepare('SELECT COUNT(*) as count FROM users').get() as {count: number};
+  const totalApps = db.prepare('SELECT COUNT(*) as count FROM applications').get() as {count: number};
   
-  const pendingSnapshot = await db.collection('applications').where('status', '==', 'pending').count().get();
-  const approvedSnapshot = await db.collection('applications').where('status', '==', 'approved').count().get();
-  const rejectedSnapshot = await db.collection('applications').where('status', '==', 'rejected').count().get();
+  const pendingApps = db.prepare("SELECT COUNT(*) as count FROM applications WHERE status = 'pending'").get() as {count: number};
+  const approvedApps = db.prepare("SELECT COUNT(*) as count FROM applications WHERE status = 'approved'").get() as {count: number};
+  const rejectedApps = db.prepare("SELECT COUNT(*) as count FROM applications WHERE status = 'rejected'").get() as {count: number};
   
-  // For today's apps, we need a date range query
-  const startOfDay = new Date();
-  startOfDay.setHours(0, 0, 0, 0);
-  const todayAppsSnapshot = await db.collection('applications')
-    .where('created_at', '>=', admin.firestore.Timestamp.fromDate(startOfDay))
-    .count().get();
+  const todayApps = db.prepare("SELECT COUNT(*) as count FROM applications WHERE date(created_at) = date('now')").get() as {count: number};
 
-  // For funnel, we need to aggregate by step
-  const users = await db.collection('users').get();
-  const stepCounts: Record<number, number> = {};
-  users.forEach(doc => {
-    const step = doc.data().step || 0;
-    stepCounts[step] = (stepCounts[step] || 0) + 1;
-  });
-  const funnel = Object.entries(stepCounts).map(([step, count]) => ({ step: Number(step), count })).sort((a, b) => a.step - b.step);
+  const funnelData = db.prepare('SELECT step, COUNT(*) as count FROM users GROUP BY step ORDER BY step').all() as {step: number, count: number}[];
 
   return {
-    totalUsers: usersSnapshot.data().count,
-    totalApps: appsSnapshot.data().count,
-    todayApps: todayAppsSnapshot.data().count,
-    pendingApps: pendingSnapshot.data().count,
-    approvedApps: approvedSnapshot.data().count,
-    rejectedApps: rejectedSnapshot.data().count,
-    funnel
+    totalUsers: totalUsers.count,
+    totalApps: totalApps.count,
+    todayApps: todayApps.count,
+    pendingApps: pendingApps.count,
+    approvedApps: approvedApps.count,
+    rejectedApps: rejectedApps.count,
+    funnel: funnelData
   };
 }
 
 export async function clearData() {
-  const users = await db.collection('users').get();
-  const apps = await db.collection('applications').get();
-  
-  const batch = db.batch();
-  users.docs.forEach(doc => batch.delete(doc.ref));
-  apps.docs.forEach(doc => batch.delete(doc.ref));
-  
-  await batch.commit();
+  db.exec('DELETE FROM applications');
+  db.exec('DELETE FROM users');
 }
 
 export async function getBotTexts() {
-  const doc = await db.collection('settings').doc('bot_texts').get();
-  if (doc.exists) {
-    return doc.data();
+  const stmt = db.prepare("SELECT value FROM settings WHERE key = 'bot_texts'");
+  const row = stmt.get() as {value: string} | undefined;
+  
+  if (row && row.value) {
+    try {
+      return JSON.parse(row.value);
+    } catch (e) {
+      return null;
+    }
   }
   return null;
 }
 
 export async function updateBotTexts(texts: any) {
-  await db.collection('settings').doc('bot_texts').set(texts, { merge: true });
-}
-
-export function initDb() {
-  // No-op for Firestore
+  const stmt = db.prepare("INSERT INTO settings (key, value) VALUES ('bot_texts', ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value");
+  stmt.run(JSON.stringify(texts));
 }
