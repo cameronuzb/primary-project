@@ -36,9 +36,9 @@ const defaultTexts = {
     ask_name: 'Отлично! 🎉\n\nПожалуйста, отправьте ваши <b>Имя и Фамилию</b> текстовым сообщением. ✍️',
     ask_age_city: 'Супер! Теперь укажите ваш <b>возраст</b> и <b>город проживания</b>. 🏙️\n\n<i>Пример: 22, Ташкент</i>',
     ask_social: 'Отправьте ссылку на ваш профиль <b>Instagram</b> или <b>TikTok</b>. 📱',
-    ask_lang_proficiency: '💬 <b>Владеете ли вы русским и узбекским языками в совершенстве?</b>\n\nПожалуйста, опишите ваш уровень владения языками. 🗣️',
-    ask_video_ru: 'Отправьте короткое <b>видеосообщение (кружочек) на РУССКОМ языке</b> (до 30 сек) с ответом на вопрос:\n\n💬 <i>«Почему именно вы должны стать лицом Dinay?»</i>\n\n🎥 <i>Принимаются только видео или кружочки.</i>',
-    ask_video_uz: 'Отлично! Теперь отправьте такое же <b>видеосообщение (кружочек) на УЗБЕКСКОМ языке</b> (до 30 сек) с ответом на вопрос:\n\n💬 <i>«Почему именно вы должны стать лицом Dinay?»</i>\n\n🎥 <i>Принимаются только видео или кружочки.</i>',
+    ask_lang_proficiency: '💬 <b>Владеете ли вы русским и узбекским языками в совершенстве?</b>\n\nЛицо бренда Dinay должно свободно общаться на обоих языках. Пожалуйста, напишите, как хорошо вы владеете русским и узбекским. 🗣️',
+    ask_video_uz: 'Спасибо! Чтобы мы могли оценить вашу харизму и владение языком, отправьте короткое <b>видеосообщение (кружочек) на УЗБЕКСКОМ языке</b> (до 30 сек).\n\nВ видео ответьте на вопрос:\n💬 <i>«Почему именно вы должны стать лицом Dinay?»</i>\n\n🎥 <i>Принимаются только видео или кружочки.</i>',
+    ask_video_ru: 'Отлично! А теперь, чтобы продемонстрировать знание второго языка, запишите такое же <b>видеосообщение (кружочек) на РУССКОМ языке</b> (до 30 сек).\n\nОтветьте на тот же вопрос:\n💬 <i>«Почему именно вы должны стать лицом Dinay?»</i>\n\n🎥 <i>Принимаются только видео или кружочки.</i>',
     done: '🎉 Ваша анкета принята!\nСпасибо за интерес к Dinay 💚\nЕсли ваша кандидатура пройдёт текущий этап отбора, мы свяжемся с вами.',
     not_video: '❌ Пожалуйста, отправьте именно <b>видео</b> или <b>видеосообщение (кружочек)</b>.',
     approved: '🎉 <b>Поздравляем, {name}!</b>\n\nВаша заявка на участие в кастинге <b>Dinay Brandface</b> была <b>одобрена</b>! 🥳 Мы скоро свяжемся с вами для дальнейших шагов.',
@@ -50,9 +50,9 @@ const defaultTexts = {
     ask_name: 'Ajoyib! 🎉\n\nIltimos, <b>Ism va Familiyangizni</b> matnli xabar orqali yuboring. ✍️',
     ask_age_city: 'Super! Endi <b>yoshingizni</b> va <b>yashash shahringizni</b> kiriting. 🏙️\n\n<i>Misol: 22, Toshkent</i>',
     ask_social: '<b>Instagram</b> yoki <b>TikTok</b> profilingiz havolasini yuboring. 📱',
-    ask_lang_proficiency: '💬 <b>Rus va o\'zbek tillarini mukammal bilasizmi?</b>\n\nIltimos, tillarni bilish darajangizni tavsiflang. 🗣️',
-    ask_video_ru: 'Quyidagi savolga javob berilgan qisqa <b>video xabar (aylana) RUS tilida</b> (30 soniyagacha) yuboring:\n\n💬 <i>«Nima uchun aynan siz Dinay yuzi bo\'lishingiz kerak?»</i>\n\n🎥 <i>Faqat video yoki aylana video qabul qilinadi.</i>',
-    ask_video_uz: 'Ajoyib! Endi xuddi shunday <b>video xabarni (aylana) O\'ZBEK tilida</b> (30 soniyagacha) yuboring:\n\n💬 <i>«Nima uchun aynan siz Dinay yuzi bo\'lishingiz kerak?»</i>\n\n🎥 <i>Faqat video yoki aylana video qabul qilinadi.</i>',
+    ask_lang_proficiency: '💬 <b>Rus va o\'zbek tillarini mukammal bilasizmi?</b>\n\nDinay brendining yuzi ikkala tilda ham erkin muloqot qila olishi kerak. Iltimos, rus va o\'zbek tillarini qay darajada bilishingizni yozib yuboring. 🗣️',
+    ask_video_uz: 'Rahmat! Xarizmangiz va til bilish darajangizni baholashimiz uchun, qisqa <b>video xabar (aylana) O\'ZBEK tilida</b> (30 soniyagacha) yuboring.\n\nVideoda quyidagi savolga javob bering:\n💬 <i>«Nima uchun aynan siz Dinay yuzi bo\'lishingiz kerak?»</i>\n\n🎥 <i>Faqat video yoki aylana video qabul qilinadi.</i>',
+    ask_video_ru: 'Ajoyib! Endi ikkinchi tilni bilishingizni ko\'rsatish uchun, xuddi shunday <b>video xabarni (aylana) RUS tilida</b> (30 soniyagacha) yozib yuboring.\n\nXuddi shu savolga javob bering:\n💬 <i>«Nima uchun aynan siz Dinay yuzi bo\'lishingiz kerak?»</i>\n\n🎥 <i>Faqat video yoki aylana video qabul qilinadi.</i>',
     done: '🎉 Sizning anketangiz qabul qilindi!\nDinayga bo\'lgan qiziqishingiz uchun rahmat 💚\nAgar nomzodingiz joriy saralash bosqichidan o\'tsa, biz siz bilan bog\'lanamiz.',
     not_video: '❌ Iltimos, faqat <b>video</b> yoki <b>video xabar (aylana)</b> yuboring.',
     approved: '🎉 <b>Tabriklaymiz, {name}!</b>\n\nSizning <b>Dinay Brandface</b> kastingidagi arizangiz <b>qabul qilindi</b>! 🥳 Keyingi qadamlar uchun tez orada siz bilan bog\'lanamiz.',
@@ -253,7 +253,7 @@ export async function initBot(token: string) {
       ctx.session.langProficiency = ctx.message.text;
       ctx.session.step = 7;
       await updateUser(userId, { step: 7, lang_proficiency: ctx.message.text });
-      await ctx.reply(getText(lang, 'ask_video_ru'), { parse_mode: 'HTML' });
+      await ctx.reply(getText(lang, 'ask_video_uz'), { parse_mode: 'HTML' });
     }
   });
 
@@ -263,14 +263,14 @@ export async function initBot(token: string) {
     const userId = ctx.from.id;
     
     if (step === 7) {
-      ctx.session.videoRuId = ctx.message.video?.file_id || ctx.message.video_note?.file_id;
-      ctx.session.step = 8;
-      await updateUser(userId, { step: 8, video_ru_id: ctx.session.videoRuId });
-      await ctx.reply(getText(lang, 'ask_video_uz'), { parse_mode: 'HTML' });
-    } else if (step === 8) {
       ctx.session.videoUzId = ctx.message.video?.file_id || ctx.message.video_note?.file_id;
+      ctx.session.step = 8;
+      await updateUser(userId, { step: 8, video_uz_id: ctx.session.videoUzId });
+      await ctx.reply(getText(lang, 'ask_video_ru'), { parse_mode: 'HTML' });
+    } else if (step === 8) {
+      ctx.session.videoRuId = ctx.message.video?.file_id || ctx.message.video_note?.file_id;
       ctx.session.step = 9;
-      await updateUser(userId, { step: 9, video_uz_id: ctx.session.videoUzId });
+      await updateUser(userId, { step: 9, video_ru_id: ctx.session.videoRuId });
       
       await createApplication({
         user_id: userId,
@@ -298,20 +298,20 @@ export async function initBot(token: string) {
         await ctx.api.sendMessage(groupId, notifyText, { parse_mode: 'HTML' });
         
         // Отправляем видео или кружочек
-        if (ctx.session.videoRuId) {
-          await ctx.api.sendMessage(groupId, '🎥 Видео на русском:');
-          try {
-            await ctx.api.sendVideoNote(groupId, ctx.session.videoRuId);
-          } catch (e) {
-            await ctx.api.sendVideo(groupId, ctx.session.videoRuId).catch(console.error);
-          }
-        }
         if (ctx.session.videoUzId) {
           await ctx.api.sendMessage(groupId, '🎥 Видео на узбекском:');
           try {
             await ctx.api.sendVideoNote(groupId, ctx.session.videoUzId);
           } catch (e) {
             await ctx.api.sendVideo(groupId, ctx.session.videoUzId).catch(console.error);
+          }
+        }
+        if (ctx.session.videoRuId) {
+          await ctx.api.sendMessage(groupId, '🎥 Видео на русском:');
+          try {
+            await ctx.api.sendVideoNote(groupId, ctx.session.videoRuId);
+          } catch (e) {
+            await ctx.api.sendVideo(groupId, ctx.session.videoRuId).catch(console.error);
           }
         }
       } catch (err) {
