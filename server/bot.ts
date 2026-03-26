@@ -108,16 +108,31 @@ export async function initBot(token: string) {
     try {
       const chatMember = await ctx.api.getChatMember(groupId, ctx.from.id);
       if (chatMember.status !== 'creator' && chatMember.status !== 'administrator') {
+        await ctx.reply('⛔️ У вас нет прав администратора в группе для выполнения этой команды.');
         return;
       }
     } catch (e) {
-      // If error, maybe not in group or bot not admin. Let's just allow it for now or check a specific admin ID.
-      // We will allow anyone who knows the command to set it, or you can restrict it.
+      console.error('Admin check error:', e);
+      // Если бот не добавлен в группу или ID группы неверный, разрешим пока всем, 
+      // чтобы не блокировать функционал, либо можно добавить проверку по ID.
     }
 
-    const document = ctx.message?.document;
+    let document = ctx.message?.document;
+    
+    // Check if it's a reply to a document
+    if (!document && ctx.message?.reply_to_message?.document) {
+      document = ctx.message.reply_to_message.document;
+    }
+
     if (!document) {
-      await ctx.reply('Пожалуйста, отправьте PDF-файл публичной оферты с подписью /setoffer');
+      await ctx.reply(
+        '⚠️ <b>Как обновить оферту:</b>\n\n' +
+        '1. Отправьте файл (PDF или другой документ) в этот чат.\n' +
+        '2. В поле "Подпись" (Caption) напишите команду <code>/setoffer</code>\n' +
+        '<b>ИЛИ</b>\n' +
+        'Ответьте (Reply) на уже отправленный файл командой <code>/setoffer</code>',
+        { parse_mode: 'HTML' }
+      );
       return;
     }
 
