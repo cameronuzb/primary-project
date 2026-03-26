@@ -23,10 +23,16 @@ export default function App() {
   const fetchStatus = async () => {
     try {
       const res = await fetch('/api/status');
-      const data = await res.json();
-      setIsRunning(data.running);
+      if (!res.ok) return;
+      const text = await res.text();
+      try {
+        const data = JSON.parse(text);
+        setIsRunning(data.running);
+      } catch (e) {
+        console.error('Failed to parse status JSON:', text.substring(0, 100));
+      }
     } catch (e) {
-      console.error(e);
+      console.error('Failed to fetch status:', e);
     }
   };
 
@@ -36,17 +42,27 @@ export default function App() {
         fetch('/api/stats'),
         fetch('/api/applications')
       ]);
-      const statsData = await statsRes.json();
-      const appsData = await appsRes.json();
       
-      if (!statsData.error) {
-        setStats(statsData);
-      }
-      if (!appsData.error && Array.isArray(appsData)) {
-        setApplications(appsData);
+      if (!statsRes.ok || !appsRes.ok) return;
+      
+      const statsText = await statsRes.text();
+      const appsText = await appsRes.text();
+      
+      try {
+        const statsData = JSON.parse(statsText);
+        const appsData = JSON.parse(appsText);
+        
+        if (!statsData.error) {
+          setStats(statsData);
+        }
+        if (!appsData.error && Array.isArray(appsData)) {
+          setApplications(appsData);
+        }
+      } catch (e) {
+        console.error('Failed to parse data JSON');
       }
     } catch (e) {
-      console.error(e);
+      console.error('Failed to fetch data:', e);
     }
   };
 
@@ -71,8 +87,13 @@ export default function App() {
       if (res.ok) {
         setIsRunning(true);
       } else {
-        const data = await res.json();
-        alert(data.error);
+        const text = await res.text();
+        try {
+          const data = JSON.parse(text);
+          alert(data.error);
+        } catch (e) {
+          alert('Failed to start bot. Server might be restarting.');
+        }
       }
     } catch (e) {
       console.error(e);
@@ -203,9 +224,17 @@ export default function App() {
                       method: 'POST',
                       headers: { 'Content-Type': 'application/json' },
                       body: JSON.stringify({ token: '8739742447:AAHrHEYWdn3-f6oBE2IWNkDU7PpO62pquZs' })
-                    }).then(res => {
+                    }).then(async res => {
                       if (res.ok) setIsRunning(true);
-                      else res.json().then(data => alert(data.error));
+                      else {
+                        const text = await res.text();
+                        try {
+                          const data = JSON.parse(text);
+                          alert(data.error);
+                        } catch (e) {
+                          alert('Failed to start bot. Server might be restarting.');
+                        }
+                      }
                     });
                   }}
                   className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
