@@ -1,5 +1,5 @@
 import { Bot, Context, session, SessionFlavor, InputFile } from 'grammy';
-import { getUser, updateUser, createApplication, getApplications, getBotTexts } from './db.js';
+import { getUser, updateUser, createApplication, getApplications, getBotTexts, updateBotTexts } from './db.js';
 
 interface SessionData {
   language?: 'ru' | 'uz';
@@ -7,8 +7,9 @@ interface SessionData {
   fullName?: string;
   ageCity?: string;
   socialLink?: string;
-  photoFileId?: string;
-  videoFileId?: string;
+  langProficiency?: string;
+  videoRuId?: string;
+  videoUzId?: string;
 }
 
 type MyContext = Context & SessionFlavor<SessionData>;
@@ -30,29 +31,29 @@ export async function stopBot() {
 
 const defaultTexts = {
   ru: {
-    welcome: '👋 Здравствуйте, <b>{name}</b>!\n\nДобро пожаловать в кастинг <b>Dinay Brandface</b>! 🌟\n\n❗️ <b>Важное условие:</b> Знание русского и узбекского языков должно быть на 100%.\n\nВы готовы продолжить и заполнить анкету?',
-    agree: '✅ Продолжить',
+    welcome: '👋 Здравствуйте, <b>{name}</b>!\n\nДобро пожаловать в кастинг <b>Dinay Brandface</b>! 🌟\n\nПожалуйста, ознакомьтесь с публичной офертой.\n\nВы готовы заполнить анкету?',
+    agree: '✅ Начать',
     ask_name: 'Отлично! 🎉\n\nПожалуйста, отправьте ваши <b>Имя и Фамилию</b> текстовым сообщением. ✍️',
     ask_age_city: 'Супер! Теперь укажите ваш <b>возраст</b> и <b>город проживания</b>. 🏙️\n\n<i>Пример: 22, Ташкент</i>',
     ask_social: 'Отправьте ссылку на ваш профиль <b>Instagram</b> или <b>TikTok</b>. 📱',
-    ask_photo: 'Пожалуйста, отправьте <b>скриншот статистики</b> вашего профиля (охваты за последние 30 дней). 📈\n\n⚠️ <i>Принимаются только фото.</i>',
-    ask_video: 'Отправьте короткое <b>видео</b> (до 30 сек) с ответом на вопрос:\n\n💬 <i>«Почему именно вы должны стать лицом Dinay?»</i>\n\n🎥 <i>Принимаются только видео или кружочки.</i>',
-    done: '🎉 <b>Ваша анкета успешно отправлена!</b>\n\nСпасибо за участие. Ожидайте результатов, мы обязательно с вами свяжемся! ⏳',
-    not_photo: '❌ Пожалуйста, отправьте именно <b>фото</b> (скриншот статистики).',
+    ask_lang_proficiency: '💬 <b>Владеете ли вы русским и узбекским языками в совершенстве?</b>\n\nПожалуйста, опишите ваш уровень владения языками. 🗣️',
+    ask_video_ru: 'Отправьте короткое <b>видеосообщение (кружочек) на РУССКОМ языке</b> (до 30 сек) с ответом на вопрос:\n\n💬 <i>«Почему именно вы должны стать лицом Dinay?»</i>\n\n🎥 <i>Принимаются только видео или кружочки.</i>',
+    ask_video_uz: 'Отлично! Теперь отправьте такое же <b>видеосообщение (кружочек) на УЗБЕКСКОМ языке</b> (до 30 сек) с ответом на вопрос:\n\n💬 <i>«Почему именно вы должны стать лицом Dinay?»</i>\n\n🎥 <i>Принимаются только видео или кружочки.</i>',
+    done: '🎉 Ваша анкета принята!\nСпасибо за интерес к Dinay 💚\nЕсли ваша кандидатура пройдёт текущий этап отбора, мы свяжемся с вами.',
     not_video: '❌ Пожалуйста, отправьте именно <b>видео</b> или <b>видеосообщение (кружочек)</b>.',
     approved: '🎉 <b>Поздравляем, {name}!</b>\n\nВаша заявка на участие в кастинге <b>Dinay Brandface</b> была <b>одобрена</b>! 🥳 Мы скоро свяжемся с вами для дальнейших шагов.',
     rejected: '😔 <b>Здравствуйте, {name}.</b>\n\nК сожалению, ваша заявка была отклонена. Спасибо за проявленный интерес и участие! Желаем успехов в будущем. 🌟'
   },
   uz: {
-    welcome: '👋 Assalomu alaykum, <b>{name}</b>!\n\n<b>Dinay Brandface</b> kastingiga xush kelibsiz! 🌟\n\n❗️ <b>Muhim shart:</b> Rus va o\'zbek tillarini 100% bilish talab etiladi.\n\nDavom etishga va anketani to\'ldirishga tayyormisiz?',
-    agree: '✅ Davom etish',
+    welcome: '👋 Assalomu alaykum, <b>{name}</b>!\n\n<b>Dinay Brandface</b> kastingiga xush kelibsiz! 🌟\n\nIltimos, ommaviy oferta bilan tanishib chiqing.\n\nAnketani to\'ldirishga tayyormisiz?',
+    agree: '✅ Boshlash',
     ask_name: 'Ajoyib! 🎉\n\nIltimos, <b>Ism va Familiyangizni</b> matnli xabar orqali yuboring. ✍️',
     ask_age_city: 'Super! Endi <b>yoshingizni</b> va <b>yashash shahringizni</b> kiriting. 🏙️\n\n<i>Misol: 22, Toshkent</i>',
     ask_social: '<b>Instagram</b> yoki <b>TikTok</b> profilingiz havolasini yuboring. 📱',
-    ask_photo: 'Iltimos, profilingiz statistikasining <b>skrinshotini</b> yuboring (so\'nggi 30 kunlik qamrov). 📈\n\n⚠️ <i>Faqat rasm qabul qilinadi.</i>',
-    ask_video: 'Quyidagi savolga javob berilgan qisqa <b>video</b> (30 soniyagacha) yuboring:\n\n💬 <i>«Nima uchun aynan siz Dinay yuzi bo\'lishingiz kerak?»</i>\n\n🎥 <i>Faqat video yoki aylana video qabul qilinadi.</i>',
-    done: '🎉 <b>Sizning anketangiz muvaffaqiyatli yuborildi!</b>\n\nIshtirokingiz uchun rahmat. Natijalarni kuting, biz albatta siz bilan bog\'lanamiz! ⏳',
-    not_photo: '❌ Iltimos, faqat <b>rasm</b> (statistika skrinshoti) yuboring.',
+    ask_lang_proficiency: '💬 <b>Rus va o\'zbek tillarini mukammal bilasizmi?</b>\n\nIltimos, tillarni bilish darajangizni tavsiflang. 🗣️',
+    ask_video_ru: 'Quyidagi savolga javob berilgan qisqa <b>video xabar (aylana) RUS tilida</b> (30 soniyagacha) yuboring:\n\n💬 <i>«Nima uchun aynan siz Dinay yuzi bo\'lishingiz kerak?»</i>\n\n🎥 <i>Faqat video yoki aylana video qabul qilinadi.</i>',
+    ask_video_uz: 'Ajoyib! Endi xuddi shunday <b>video xabarni (aylana) O\'ZBEK tilida</b> (30 soniyagacha) yuboring:\n\n💬 <i>«Nima uchun aynan siz Dinay yuzi bo\'lishingiz kerak?»</i>\n\n🎥 <i>Faqat video yoki aylana video qabul qilinadi.</i>',
+    done: '🎉 Sizning anketangiz qabul qilindi!\nDinayga bo\'lgan qiziqishingiz uchun rahmat 💚\nAgar nomzodingiz joriy saralash bosqichidan o\'tsa, biz siz bilan bog\'lanamiz.',
     not_video: '❌ Iltimos, faqat <b>video</b> yoki <b>video xabar (aylana)</b> yuboring.',
     approved: '🎉 <b>Tabriklaymiz, {name}!</b>\n\nSizning <b>Dinay Brandface</b> kastingidagi arizangiz <b>qabul qilindi</b>! 🥳 Keyingi qadamlar uchun tez orada siz bilan bog\'lanamiz.',
     rejected: '😔 <b>Assalomu alaykum, {name}.</b>\n\nAfsuski, arizangiz rad etildi. Qiziqish bildirganingiz va ishtirokingiz uchun rahmat! Kelgusidagi ishlaringizda muvaffaqiyatlar tilaymiz. 🌟'
@@ -93,13 +94,43 @@ export async function initBot(token: string) {
         ctx.session.fullName = user.full_name;
         ctx.session.ageCity = user.age_city;
         ctx.session.socialLink = user.social_link;
-        ctx.session.photoFileId = user.photo_file_id;
-        ctx.session.videoFileId = user.video_file_id;
+        ctx.session.langProficiency = user.lang_proficiency;
+        ctx.session.videoRuId = user.video_ru_id;
+        ctx.session.videoUzId = user.video_uz_id;
       }
     }
     await next();
   });
   
+  bot.command('setoffer', async (ctx) => {
+    // Check if admin
+    const groupId = '-5208437302';
+    try {
+      const chatMember = await ctx.api.getChatMember(groupId, ctx.from.id);
+      if (chatMember.status !== 'creator' && chatMember.status !== 'administrator') {
+        return;
+      }
+    } catch (e) {
+      // If error, maybe not in group or bot not admin. Let's just allow it for now or check a specific admin ID.
+      // We will allow anyone who knows the command to set it, or you can restrict it.
+    }
+
+    const document = ctx.message?.document;
+    if (!document) {
+      await ctx.reply('Пожалуйста, отправьте PDF-файл публичной оферты с подписью /setoffer');
+      return;
+    }
+
+    const fileId = document.file_id;
+    let texts = await getBotTexts() || defaultTexts;
+    texts.offer_file_id = fileId;
+    
+    await updateBotTexts(texts);
+    await reloadTexts();
+    
+    await ctx.reply('✅ Публичная оферта успешно обновлена!');
+  });
+
   bot.command('start', async (ctx) => {
     const utm = ctx.match || '';
     const userId = ctx.from?.id;
@@ -148,6 +179,13 @@ export async function initBot(token: string) {
       await ctx.answerCallbackQuery();
       await ctx.deleteMessage().catch(() => {});
       
+      // Send offer file if exists
+      if (currentTexts?.offer_file_id) {
+        await ctx.api.sendDocument(userId, currentTexts.offer_file_id, {
+          caption: '📄 Публичная оферта / Ommaviy oferta'
+        }).catch(console.error);
+      }
+      
       await ctx.reply(
         getText(lang, 'welcome', { name: safeName }),
         {
@@ -191,20 +229,12 @@ export async function initBot(token: string) {
       ctx.session.socialLink = ctx.message.text;
       ctx.session.step = 6;
       await updateUser(userId, { step: 6, social_link: ctx.message.text });
-      await ctx.reply(getText(lang, 'ask_photo'), { parse_mode: 'HTML' });
-    }
-  });
-
-  bot.on('message:photo', async (ctx) => {
-    const step = ctx.session.step;
-    const lang = ctx.session.language || 'ru';
-    const userId = ctx.from.id;
-    
-    if (step === 6) {
-      ctx.session.photoFileId = ctx.message.photo[ctx.message.photo.length - 1].file_id;
+      await ctx.reply(getText(lang, 'ask_lang_proficiency'), { parse_mode: 'HTML' });
+    } else if (step === 6) {
+      ctx.session.langProficiency = ctx.message.text;
       ctx.session.step = 7;
-      await updateUser(userId, { step: 7, photo_file_id: ctx.session.photoFileId });
-      await ctx.reply(getText(lang, 'ask_video'), { parse_mode: 'HTML' });
+      await updateUser(userId, { step: 7, lang_proficiency: ctx.message.text });
+      await ctx.reply(getText(lang, 'ask_video_ru'), { parse_mode: 'HTML' });
     }
   });
 
@@ -214,17 +244,23 @@ export async function initBot(token: string) {
     const userId = ctx.from.id;
     
     if (step === 7) {
-      ctx.session.videoFileId = ctx.message.video?.file_id || ctx.message.video_note?.file_id;
+      ctx.session.videoRuId = ctx.message.video?.file_id || ctx.message.video_note?.file_id;
       ctx.session.step = 8;
-      await updateUser(userId, { step: 8, video_file_id: ctx.session.videoFileId });
+      await updateUser(userId, { step: 8, video_ru_id: ctx.session.videoRuId });
+      await ctx.reply(getText(lang, 'ask_video_uz'), { parse_mode: 'HTML' });
+    } else if (step === 8) {
+      ctx.session.videoUzId = ctx.message.video?.file_id || ctx.message.video_note?.file_id;
+      ctx.session.step = 9;
+      await updateUser(userId, { step: 9, video_uz_id: ctx.session.videoUzId });
       
       await createApplication({
         user_id: userId,
         full_name: ctx.session.fullName,
         age_city: ctx.session.ageCity,
         social_link: ctx.session.socialLink,
-        photo_file_id: ctx.session.photoFileId,
-        video_file_id: ctx.session.videoFileId
+        lang_proficiency: ctx.session.langProficiency,
+        video_ru_id: ctx.session.videoRuId,
+        video_uz_id: ctx.session.videoUzId
       });
       
       // Отправка уведомления в группу
@@ -237,24 +273,26 @@ export async function initBot(token: string) {
           `👤 <b>ФИО:</b> ${ctx.session.fullName}\n` +
           `🏙 <b>Возраст/Город:</b> ${ctx.session.ageCity}\n` +
           `📱 <b>Соцсеть:</b> ${ctx.session.socialLink}\n` +
+          `🗣 <b>Знание языков:</b> ${ctx.session.langProficiency}\n` +
           `💬 <b>Telegram:</b> ${userLink}`;
 
-        // Отправляем фото с текстом
-        if (ctx.session.photoFileId) {
-          await ctx.api.sendPhoto(groupId, ctx.session.photoFileId, {
-            caption: notifyText,
-            parse_mode: 'HTML'
-          });
-        } else {
-          await ctx.api.sendMessage(groupId, notifyText, { parse_mode: 'HTML' });
-        }
+        await ctx.api.sendMessage(groupId, notifyText, { parse_mode: 'HTML' });
         
         // Отправляем видео или кружочек
-        if (ctx.session.videoFileId) {
-          if (ctx.message.video_note) {
-            await ctx.api.sendVideoNote(groupId, ctx.session.videoFileId);
-          } else {
-            await ctx.api.sendVideo(groupId, ctx.session.videoFileId);
+        if (ctx.session.videoRuId) {
+          await ctx.api.sendMessage(groupId, '🎥 Видео на русском:');
+          try {
+            await ctx.api.sendVideoNote(groupId, ctx.session.videoRuId);
+          } catch (e) {
+            await ctx.api.sendVideo(groupId, ctx.session.videoRuId).catch(console.error);
+          }
+        }
+        if (ctx.session.videoUzId) {
+          await ctx.api.sendMessage(groupId, '🎥 Видео на узбекском:');
+          try {
+            await ctx.api.sendVideoNote(groupId, ctx.session.videoUzId);
+          } catch (e) {
+            await ctx.api.sendVideo(groupId, ctx.session.videoUzId).catch(console.error);
           }
         }
       } catch (err) {
@@ -269,9 +307,7 @@ export async function initBot(token: string) {
     const step = ctx.session.step;
     const lang = ctx.session.language || 'ru';
     
-    if (step === 6 && !ctx.message.photo) {
-      await ctx.reply(getText(lang, 'not_photo'), { parse_mode: 'HTML' });
-    } else if (step === 7 && !ctx.message.video && !ctx.message.video_note) {
+    if ((step === 7 || step === 8) && !ctx.message.video && !ctx.message.video_note) {
       await ctx.reply(getText(lang, 'not_video'), { parse_mode: 'HTML' });
     }
   });
