@@ -302,8 +302,9 @@ export default function App() {
                       <th className="px-6 py-3 font-medium">Telegram</th>
                       <th className="px-6 py-3 font-medium">Возраст/Город</th>
                       <th className="px-6 py-3 font-medium">Соцсети</th>
-                      <th className="px-6 py-3 font-medium">Фото</th>
-                      <th className="px-6 py-3 font-medium">Видео</th>
+                      <th className="px-6 py-3 font-medium">Знание языков</th>
+                      <th className="px-6 py-3 font-medium">Видео (RU)</th>
+                      <th className="px-6 py-3 font-medium">Видео (UZ)</th>
                       <th className="px-6 py-3 font-medium">Статус</th>
                       <th className="px-6 py-3 font-medium text-right">Действия</th>
                     </tr>
@@ -332,17 +333,20 @@ export default function App() {
                             {app.social_link}
                           </a>
                         </td>
+                        <td className="px-6 py-4 text-gray-500 max-w-xs truncate" title={app.lang_proficiency}>
+                          {app.lang_proficiency}
+                        </td>
                         <td className="px-6 py-4">
-                          {app.photo_file_id && (
-                            <a href={`/api/file/${app.photo_file_id}`} target="_blank" rel="noopener noreferrer">
-                              <img src={`/api/file/${app.photo_file_id}`} alt="Фото" className="w-12 h-12 object-cover rounded-md border border-gray-200 hover:opacity-80 transition-opacity" />
+                          {app.video_ru_id && (
+                            <a href={`/api/file/${app.video_ru_id}`} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center w-10 h-10 bg-gray-100 rounded-full border border-gray-200 text-blue-600 hover:bg-blue-50 transition-colors">
+                              <Play className="w-4 h-4 ml-0.5" />
                             </a>
                           )}
                         </td>
                         <td className="px-6 py-4">
-                          {app.video_file_id && (
-                            <a href={`/api/file/${app.video_file_id}`} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center w-12 h-12 bg-gray-100 rounded-full border border-gray-200 text-blue-600 hover:bg-blue-50 transition-colors">
-                              <Play className="w-5 h-5 ml-1" />
+                          {app.video_uz_id && (
+                            <a href={`/api/file/${app.video_uz_id}`} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center w-10 h-10 bg-gray-100 rounded-full border border-gray-200 text-blue-600 hover:bg-blue-50 transition-colors">
+                              <Play className="w-4 h-4 ml-0.5" />
                             </a>
                           )}
                         </td>
@@ -418,29 +422,29 @@ function SettingsForm() {
           // Default texts if empty
           setTexts({
             ru: {
-              welcome: '👋 Здравствуйте, <b>{name}</b>!\n\nДобро пожаловать в кастинг <b>Dinay Brandface</b>! 🌟\n\nПожалуйста, внимательно ознакомьтесь с прикрепленным договором публичной оферты. 📄\n\nВы согласны с условиями?',
-              agree: '✅ Согласен(на)',
+              welcome: '👋 Здравствуйте, <b>{name}</b>!\n\nДобро пожаловать в кастинг <b>Dinay Brandface</b>! 🌟\n\nВы готовы заполнить анкету?',
+              agree: '✅ Начать',
               ask_name: 'Отлично! 🎉\n\nПожалуйста, отправьте ваши <b>Имя и Фамилию</b> текстовым сообщением. ✍️',
               ask_age_city: 'Супер! Теперь укажите ваш <b>возраст</b> и <b>город проживания</b>. 🏙️\n\n<i>Пример: 22, Ташкент</i>',
               ask_social: 'Отправьте ссылку на ваш профиль <b>Instagram</b> или <b>TikTok</b>. 📱',
-              ask_photo: 'Пожалуйста, отправьте <b>скриншот статистики</b> вашего профиля (охваты за последние 30 дней). 📈\n\n⚠️ <i>Принимаются только фото.</i>',
-              ask_video: 'Отправьте короткое <b>видео</b> (до 30 сек) с ответом на вопрос:\n\n💬 <i>«Почему именно вы должны стать лицом Dinay?»</i>\n\n🎥 <i>Принимаются только видео или кружочки.</i>',
-              done: '🎉 <b>Ваша анкета успешно отправлена!</b>\n\nСпасибо за участие. Ожидайте результатов, мы обязательно с вами свяжемся! ⏳',
-              not_photo: '❌ Пожалуйста, отправьте именно <b>фото</b> (скриншот статистики).',
+              ask_lang_proficiency: '💬 <b>Владеете ли вы русским и узбекским языками в совершенстве?</b>\n\nПожалуйста, опишите ваш уровень владения языками. 🗣️',
+              ask_video_ru: 'Отправьте короткое <b>видеосообщение (кружочек) на РУССКОМ языке</b> (до 30 сек) с ответом на вопрос:\n\n💬 <i>«Почему именно вы должны стать лицом Dinay?»</i>\n\n🎥 <i>Принимаются только видео или кружочки.</i>',
+              ask_video_uz: 'Отлично! Теперь отправьте такое же <b>видеосообщение (кружочек) на УЗБЕКСКОМ языке</b> (до 30 сек) с ответом на вопрос:\n\n💬 <i>«Почему именно вы должны стать лицом Dinay?»</i>\n\n🎥 <i>Принимаются только видео или кружочки.</i>',
+              done: '🎉 Ваша анкета принята!\nСпасибо за интерес к Dinay 💚\nЕсли ваша кандидатура пройдёт текущий этап отбора, мы свяжемся с вами.',
               not_video: '❌ Пожалуйста, отправьте именно <b>видео</b> или <b>видеосообщение (кружочек)</b>.',
               approved: '🎉 <b>Поздравляем, {name}!</b>\n\nВаша заявка на участие в кастинге <b>Dinay Brandface</b> была <b>одобрена</b>! 🥳 Мы скоро свяжемся с вами для дальнейших шагов.',
               rejected: '😔 <b>Здравствуйте, {name}.</b>\n\nК сожалению, ваша заявка была отклонена. Спасибо за проявленный интерес и участие! Желаем успехов в будущем. 🌟'
             },
             uz: {
-              welcome: '👋 Assalomu alaykum, <b>{name}</b>!\n\n<b>Dinay Brandface</b> kastingiga xush kelibsiz! 🌟\n\nIltimos, biriktirilgan ommaviy ofera shartnomasi bilan diqqat bilan tanishib chiqing. 📄\n\nShartlarga rozimisiz?',
-              agree: '✅ Roziman',
+              welcome: '👋 Assalomu alaykum, <b>{name}</b>!\n\n<b>Dinay Brandface</b> kastingiga xush kelibsiz! 🌟\n\nAnketani to\'ldirishga tayyormisiz?',
+              agree: '✅ Boshlash',
               ask_name: 'Ajoyib! 🎉\n\nIltimos, <b>Ism va Familiyangizni</b> matnli xabar orqali yuboring. ✍️',
               ask_age_city: 'Super! Endi <b>yoshingizni</b> va <b>yashash shahringizni</b> kiriting. 🏙️\n\n<i>Misol: 22, Toshkent</i>',
               ask_social: '<b>Instagram</b> yoki <b>TikTok</b> profilingiz havolasini yuboring. 📱',
-              ask_photo: 'Iltimos, profilingiz statistikasining <b>skrinshotini</b> yuboring (so\'nggi 30 kunlik qamrov). 📈\n\n⚠️ <i>Faqat rasm qabul qilinadi.</i>',
-              ask_video: 'Quyidagi savolga javob berilgan qisqa <b>video</b> (30 soniyagacha) yuboring:\n\n💬 <i>«Nima uchun aynan siz Dinay yuzi bo\'lishingiz kerak?»</i>\n\n🎥 <i>Faqat video yoki aylana video qabul qilinadi.</i>',
-              done: '🎉 <b>Sizning anketangiz muvaffaqiyatli yuborildi!</b>\n\nIshtirokingiz uchun rahmat. Natijalarni kuting, biz albatta siz bilan bog\'lanamiz! ⏳',
-              not_photo: '❌ Iltimos, faqat <b>rasm</b> (statistika skrinshoti) yuboring.',
+              ask_lang_proficiency: '💬 <b>Rus va o\'zbek tillarini mukammal bilasizmi?</b>\n\nIltimos, tillarni bilish darajangizni tavsiflang. 🗣️',
+              ask_video_ru: 'Quyidagi savolga javob berilgan qisqa <b>video xabar (aylana) RUS tilida</b> (30 soniyagacha) yuboring:\n\n💬 <i>«Nima uchun aynan siz Dinay yuzi bo\'lishingiz kerak?»</i>\n\n🎥 <i>Faqat video yoki aylana video qabul qilinadi.</i>',
+              ask_video_uz: 'Ajoyib! Endi xuddi shunday <b>video xabarni (aylana) O\'ZBEK tilida</b> (30 soniyagacha) yuboring:\n\n💬 <i>«Nima uchun aynan siz Dinay yuzi bo\'lishingiz kerak?»</i>\n\n🎥 <i>Faqat video yoki aylana video qabul qilinadi.</i>',
+              done: '🎉 Sizning anketangiz qabul qilindi!\nDinayga bo\'lgan qiziqishingiz uchun rahmat 💚\nAgar nomzodingiz joriy saralash bosqichidan o\'tsa, biz siz bilan bog\'lanamiz.',
               not_video: '❌ Iltimos, faqat <b>video</b> yoki <b>video xabar (aylana)</b> yuboring.',
               approved: '🎉 <b>Tabriklaymiz, {name}!</b>\n\nSizning <b>Dinay Brandface</b> kastingidagi arizangiz <b>qabul qilindi</b>! 🥳 Keyingi qadamlar uchun tez orada siz bilan bog\'lanamiz.',
               rejected: '😔 <b>Assalomu alaykum, {name}.</b>\n\nAfsuski, arizangiz rad etildi. Qiziqish bildirganingiz va ishtirokingiz uchun rahmat! Kelgusidagi ishlaringizda muvaffaqiyatlar tilaymiz. 🌟'
@@ -486,15 +490,15 @@ function SettingsForm() {
   if (loading) return <div>Загрузка текстов...</div>;
 
   const fields = [
-    { key: 'welcome', label: 'Приветствие (с договором)' },
-    { key: 'agree', label: 'Кнопка "Согласен"' },
+    { key: 'welcome', label: 'Приветствие' },
+    { key: 'agree', label: 'Кнопка "Начать"' },
     { key: 'ask_name', label: 'Запрос имени' },
     { key: 'ask_age_city', label: 'Запрос возраста и города' },
     { key: 'ask_social', label: 'Запрос соцсетей' },
-    { key: 'ask_photo', label: 'Запрос фото (статистики)' },
-    { key: 'ask_video', label: 'Запрос видео' },
+    { key: 'ask_lang_proficiency', label: 'Запрос знания языков' },
+    { key: 'ask_video_ru', label: 'Запрос видео (RU)' },
+    { key: 'ask_video_uz', label: 'Запрос видео (UZ)' },
     { key: 'done', label: 'Успешное завершение' },
-    { key: 'not_photo', label: 'Ошибка: отправлено не фото' },
     { key: 'not_video', label: 'Ошибка: отправлено не видео' },
     { key: 'approved', label: 'Уведомление: Заявка одобрена' },
     { key: 'rejected', label: 'Уведомление: Заявка отклонена' },
@@ -510,7 +514,7 @@ function SettingsForm() {
             <div key={`ru-${field.key}`}>
               <label className="block text-sm font-medium text-gray-700 mb-1">{field.label}</label>
               <textarea 
-                rows={field.key === 'welcome' || field.key === 'ask_video' || field.key === 'approved' || field.key === 'rejected' ? 4 : 2} 
+                rows={field.key === 'welcome' || field.key === 'ask_video_ru' || field.key === 'ask_video_uz' || field.key === 'approved' || field.key === 'rejected' ? 4 : 2} 
                 value={texts.ru[field.key]} 
                 onChange={(e) => handleChange('ru', field.key, e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 font-mono text-sm" 
@@ -526,7 +530,7 @@ function SettingsForm() {
             <div key={`uz-${field.key}`}>
               <label className="block text-sm font-medium text-gray-700 mb-1">{field.label}</label>
               <textarea 
-                rows={field.key === 'welcome' || field.key === 'ask_video' || field.key === 'approved' || field.key === 'rejected' ? 4 : 2} 
+                rows={field.key === 'welcome' || field.key === 'ask_video_ru' || field.key === 'ask_video_uz' || field.key === 'approved' || field.key === 'rejected' ? 4 : 2} 
                 value={texts.uz[field.key]} 
                 onChange={(e) => handleChange('uz', field.key, e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 font-mono text-sm" 
