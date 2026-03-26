@@ -162,6 +162,16 @@ async function startServer() {
   app.listen(PORT, '0.0.0.0', () => {
     console.log(`Server running on http://localhost:${PORT}`);
   });
+
+  // Cleanly stop the bot on process exit
+  const gracefulShutdown = async () => {
+    console.log('Shutting down gracefully...');
+    await stopBot();
+    process.exit(0);
+  };
+
+  process.on('SIGINT', gracefulShutdown);
+  process.on('SIGTERM', gracefulShutdown);
 }
 
 startServer();
