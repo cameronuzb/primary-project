@@ -78,11 +78,26 @@ export async function reloadTexts() {
 
 function getText(lang: 'ru' | 'uz', key: string, params: Record<string, string> = {}): string {
   if (!currentTexts) currentTexts = defaultTexts;
-  let text = currentTexts[lang]?.[key] || defaultTexts[lang]?.[key as keyof typeof defaultTexts['ru']] || '';
+  let text = currentTexts[lang]?.[key];
+  if (!text || text.trim() === '') {
+    text = defaultTexts[lang]?.[key as keyof typeof defaultTexts['ru']] || '';
+  }
   for (const [k, v] of Object.entries(params)) {
     text = text.replace(new RegExp(`{${k}}`, 'g'), v);
   }
   return text;
+}
+
+async function safeReply(ctx: any, text: string, options: any = {}) {
+  try {
+    return await ctx.reply(text, options);
+  } catch (e) {
+    console.error('Failed to send message with HTML, falling back to plain text:', e);
+    const plainText = text.replace(/<[^>]*>?/gm, '');
+    const safeOptions = { ...options };
+    delete safeOptions.parse_mode;
+    return await ctx.reply(plainText, safeOptions);
+  }
 }
 
 export async function initBot(token: string) {
@@ -120,157 +135,244 @@ export async function initBot(token: string) {
   
   bot.command('setoffer', async (ctx) => {
     // Check if admin
-    const adminIds = [768567874]; // Ваша админка
-    if (!ctx.from || !adminIds.includes(ctx.from.id)) {
-      return ctx.reply('У вас нет прав для этой команды.');
+    const groupId = '-5208437302';
+    const allowedAdmins = [768567874]; // Ваш Telegram ID
+    
+    if (!allowedAdmins.includes(ctx.from.id)) {
+      try {
+        const chatMember = await ctx.api.getChatMember(groupId, ctx.from.id);
+        if (chatMember.status !== 'creator' && chatMember.status !== 'administrator') {
+          await safeReply(ctx, '⛔️ У вас нет прав администратора для выполнения этой команды.');
+          return;
+        }
+      } catch (e) {
+        console.error('Admin check error:', e);
+        await safeReply(ctx, '⛔️ У вас нет прав для выполнения этой команды.');
+        return;
+      }
     }
 
-    const reply = ctx.message?.reply_to_message;
-    if (!reply || !reply.document) {
-      return ctx.reply('Пожалуйста, ответьте на сообщение с файлом (документом) оферты командой /setoffer');
+    let document = ctx.message?.document;
+    
+    // Check if it's a reply to a document
+    if (!document && ctx.message?.reply_to_message?.document) {
+      document = ctx.message.reply_to_message.document;
     }
 
-    const fileId = reply.document.file_id;
-    await updateBotTexts({ offer_file_id: fileId });
+    if (!document) {
+      await safeReply(ctx, 
+        '⚠️ <b>Как обновить оферту:</b>\n\n' +
+        '1. Отправьте файл (PDF или другой документ) в этот чат.\n' +
+        '2. В поле "Подпись" (Caption) напишите команду <code>/setoffer</code>\n' +
+        '<b>ИЛИ</b>\n' +
+        'Ответьте (Reply) на уже отправленный файл командой <code>/setoffer</code>',
+        { parse_mode: 'HTML' }
+      );
+      return;
+    }
+
+    const fileId = document.file_id;
+    let texts = await getBotTexts() || defaultTexts;
+    texts.offer_file_id = fileId;
+    
+    await updateBotTexts(texts);
     await reloadTexts();
     
-    return ctx.reply('✅ Файл оферты успешно обновлен!');
+    await safeReply(ctx, '✅ Публичная оферта успешно обновлена!');
   });
 
   bot.command('start', async (ctx) => {
+    const utm = ctx.match || '';
+    const userId = ctx.from?.id;
+    const username = ctx.from?.username || '';
+    
+    if (userId) {
+      const existingUser = await getUser(userId);
+      if (!existingUser) {
+        await updateUser(userId, {
+          username,
+          utm_source: utm,
+          step: 1,
+          joined_at: new Date().toISOString()
+        });
+      } else {
+        await updateUser(userId, { step: 1 });
+      }
+    }
+    
     ctx.session.step = 1;
     
-    const user = await getUser(ctx.from?.id || 0);
-    if (!user) {
-      await updateUser(ctx.from?.id || 0, {
-        username: ctx.from?.username,
-        first_name: ctx.from?.first_name,
-        last_name: ctx.from?.last_name,
-        step: 1
-      });
-    } else {
-      await updateUser(ctx.from?.id || 0, { step: 1 });
-    }
-
-    await ctx.reply('Tilni tanlang / Выберите язык:', {
+    await safeReply(ctx, 'Выберите язык / Tilni tanlang:', {
       reply_markup: {
         inline_keyboard: [
           [{ text: '🇷🇺 Русский', callback_data: 'lang_ru' }],
-          [{ text: '🇺🇿 O\'zbekcha', callback_data: 'lang_uz' }]
+          [{ text: "🇺🇿 O'zbekcha", callback_data: 'lang_uz' }]
         ]
       }
     });
   });
-
-  bot.callbackQuery(/^lang_(ru|uz)$/, async (ctx) => {
-    const lang = ctx.match[1] as 'ru' | 'uz';
-    ctx.session.language = lang;
-    ctx.session.step = 2;
+  
+  bot.on('callback_query:data', async (ctx) => {
+    const data = ctx.callbackQuery.data;
+    const userId = ctx.from.id;
     
-    await updateUser(ctx.from.id, { lang, step: 2 });
-    
-    const welcomeText = getText(lang, 'welcome', { name: ctx.from.first_name });
-    
-    if (currentTexts?.offer_file_id) {
-      await ctx.replyWithDocument(currentTexts.offer_file_id, {
-        caption: welcomeText,
-        parse_mode: 'HTML',
-        reply_markup: {
-          inline_keyboard: [[{ text: getText(lang, 'agree'), callback_data: 'agree' }]]
-        }
-      });
-    } else {
-      await ctx.reply(welcomeText, {
-        parse_mode: 'HTML',
-        reply_markup: {
-          inline_keyboard: [[{ text: getText(lang, 'agree'), callback_data: 'agree' }]]
-        }
-      });
+    if (data === 'lang_ru' || data === 'lang_uz') {
+      const lang = data === 'lang_ru' ? 'ru' : 'uz';
+      ctx.session.language = lang;
+      ctx.session.step = 2;
+      
+      const userName = [ctx.from.first_name, ctx.from.last_name].filter(Boolean).join(' ') || 'Участник';
+      const safeName = userName.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      
+      await updateUser(userId, { language: lang, step: 2 });
+      
+      await ctx.answerCallbackQuery().catch(() => {});
+      await ctx.deleteMessage().catch(() => {});
+      
+      // Send offer file if exists
+      if (currentTexts?.offer_file_id) {
+        await ctx.api.sendDocument(userId, currentTexts.offer_file_id, {
+          caption: '📄 Публичная оферта / Ommaviy oferta'
+        }).catch(console.error);
+      }
+      
+      try {
+        await safeReply(ctx, 
+          getText(lang, 'welcome', { name: safeName }),
+          {
+            parse_mode: 'HTML',
+            reply_markup: {
+              inline_keyboard: [
+                [{ text: getText(lang, 'agree'), callback_data: 'agree' }]
+              ]
+            }
+          }
+        );
+      } catch (e) {
+        console.error('Failed to send welcome message with HTML, falling back to plain text:', e);
+        await safeReply(ctx, 
+          getText(lang, 'welcome', { name: safeName }).replace(/<[^>]*>?/gm, ''),
+          {
+            reply_markup: {
+              inline_keyboard: [
+                [{ text: getText(lang, 'agree'), callback_data: 'agree' }]
+              ]
+            }
+          }
+        );
+      }
+    } else if (data === 'agree') {
+      const lang = ctx.session.language || 'ru';
+      ctx.session.step = 3;
+      await updateUser(userId, { step: 3 });
+      
+      await ctx.answerCallbackQuery().catch(() => {});
+      // Убираем кнопку "Согласен", чтобы нельзя было нажать дважды
+      await ctx.editMessageReplyMarkup({ reply_markup: { inline_keyboard: [] } }).catch(() => {});
+      // Отправляем следующий вопрос новым сообщением
+      await safeReply(ctx, getText(lang, 'ask_name'), { parse_mode: 'HTML' });
     }
-    
-    await ctx.answerCallbackQuery();
-  });
-
-  bot.callbackQuery('agree', async (ctx) => {
-    const lang = ctx.session.language || 'ru';
-    ctx.session.step = 3;
-    await updateUser(ctx.from.id, { step: 3 });
-    
-    await ctx.reply(getText(lang, 'ask_name'), { parse_mode: 'HTML' });
-    await ctx.answerCallbackQuery();
   });
 
   bot.on('message:text', async (ctx) => {
     const step = ctx.session.step;
     const lang = ctx.session.language || 'ru';
-    const text = ctx.message.text;
-
+    const userId = ctx.from.id;
+    
     if (step === 3) {
-      ctx.session.fullName = text;
+      ctx.session.fullName = ctx.message.text;
       ctx.session.step = 4;
-      await updateUser(ctx.from.id, { full_name: text, step: 4 });
-      await ctx.reply(getText(lang, 'ask_age_city'), { parse_mode: 'HTML' });
-    } 
-    else if (step === 4) {
-      ctx.session.ageCity = text;
+      await updateUser(userId, { step: 4, full_name: ctx.message.text });
+      await safeReply(ctx, getText(lang, 'ask_age_city'), { parse_mode: 'HTML' });
+    } else if (step === 4) {
+      ctx.session.ageCity = ctx.message.text;
       ctx.session.step = 5;
-      await updateUser(ctx.from.id, { age_city: text, step: 5 });
-      await ctx.reply(getText(lang, 'ask_social'), { parse_mode: 'HTML' });
-    }
-    else if (step === 5) {
-      ctx.session.socialLink = text;
+      await updateUser(userId, { step: 5, age_city: ctx.message.text });
+      await safeReply(ctx, getText(lang, 'ask_social'), { parse_mode: 'HTML' });
+    } else if (step === 5) {
+      ctx.session.socialLink = ctx.message.text;
       ctx.session.step = 6;
-      await updateUser(ctx.from.id, { social_link: text, step: 6 });
-      await ctx.reply(getText(lang, 'ask_lang_proficiency'), { parse_mode: 'HTML' });
-    }
-    else if (step === 6) {
-      ctx.session.langProficiency = text;
+      await updateUser(userId, { step: 6, social_link: ctx.message.text });
+      await safeReply(ctx, getText(lang, 'ask_lang_proficiency'), { parse_mode: 'HTML' });
+    } else if (step === 6) {
+      ctx.session.langProficiency = ctx.message.text;
       ctx.session.step = 7;
-      await updateUser(ctx.from.id, { lang_proficiency: text, step: 7 });
-      await ctx.reply(getText(lang, 'ask_video_uz'), { parse_mode: 'HTML' });
+      await updateUser(userId, { step: 7, lang_proficiency: ctx.message.text });
+      await safeReply(ctx, getText(lang, 'ask_video_uz'), { parse_mode: 'HTML' });
     }
   });
 
   bot.on(['message:video', 'message:video_note'], async (ctx) => {
     const step = ctx.session.step;
     const lang = ctx.session.language || 'ru';
+    const userId = ctx.from.id;
     
-    const fileId = ctx.message.video?.file_id || ctx.message.video_note?.file_id;
-    if (!fileId) return;
-
     if (step === 7) {
-      ctx.session.videoUzId = fileId;
+      ctx.session.videoUzId = ctx.message.video?.file_id || ctx.message.video_note?.file_id;
       ctx.session.step = 8;
-      await updateUser(ctx.from.id, { video_uz_id: fileId, step: 8 });
-      await ctx.reply(getText(lang, 'ask_video_ru'), { parse_mode: 'HTML' });
-    }
-    else if (step === 8) {
-      ctx.session.videoRuId = fileId;
+      await updateUser(userId, { step: 8, video_uz_id: ctx.session.videoUzId });
+      await safeReply(ctx, getText(lang, 'ask_video_ru'), { parse_mode: 'HTML' });
+    } else if (step === 8) {
+      ctx.session.videoRuId = ctx.message.video?.file_id || ctx.message.video_note?.file_id;
       ctx.session.step = 9;
-      await updateUser(ctx.from.id, { video_ru_id: fileId, step: 9 });
+      await updateUser(userId, { step: 9, video_ru_id: ctx.session.videoRuId });
       
-      // Save application
       await createApplication({
-        user_id: ctx.from.id,
-        username: ctx.from.username,
-        full_name: ctx.session.fullName!,
-        age_city: ctx.session.ageCity!,
-        social_link: ctx.session.socialLink!,
-        lang_proficiency: ctx.session.langProficiency!,
-        video_ru_id: ctx.session.videoRuId!,
-        video_uz_id: ctx.session.videoUzId!
+        user_id: userId,
+        full_name: ctx.session.fullName,
+        age_city: ctx.session.ageCity,
+        social_link: ctx.session.socialLink,
+        lang_proficiency: ctx.session.langProficiency,
+        video_ru_id: ctx.session.videoRuId,
+        video_uz_id: ctx.session.videoUzId
       });
+      
+      // Отправка уведомления в группу
+      try {
+        const groupId = '-5208437302';
+        const username = ctx.from?.username;
+        const userLink = username ? `@${username}` : `<a href="tg://user?id=${userId}">Пользователь (ID: ${userId})</a>`;
+        
+        const notifyText = `🆕 <b>Новая заявка!</b>\n\n` +
+          `👤 <b>ФИО:</b> ${ctx.session.fullName}\n` +
+          `🏙 <b>Возраст/Город:</b> ${ctx.session.ageCity}\n` +
+          `📱 <b>Соцсеть:</b> ${ctx.session.socialLink}\n` +
+          `🗣 <b>Знание языков:</b> ${ctx.session.langProficiency}\n` +
+          `💬 <b>Telegram:</b> ${userLink}`;
 
-      await ctx.reply(getText(lang, 'done'), { parse_mode: 'HTML' });
+        await ctx.api.sendMessage(groupId, notifyText, { parse_mode: 'HTML' });
+        
+        // Отправляем видео или кружочек
+        if (ctx.session.videoUzId) {
+          await ctx.api.sendMessage(groupId, '🎥 Видео на узбекском:');
+          try {
+            await ctx.api.sendVideoNote(groupId, ctx.session.videoUzId);
+          } catch (e) {
+            await ctx.api.sendVideo(groupId, ctx.session.videoUzId).catch(console.error);
+          }
+        }
+        if (ctx.session.videoRuId) {
+          await ctx.api.sendMessage(groupId, '🎥 Видео на русском:');
+          try {
+            await ctx.api.sendVideoNote(groupId, ctx.session.videoRuId);
+          } catch (e) {
+            await ctx.api.sendVideo(groupId, ctx.session.videoRuId).catch(console.error);
+          }
+        }
+      } catch (err) {
+        console.error('Ошибка при отправке в группу:', err);
+      }
+      
+      await safeReply(ctx, getText(lang, 'done'), { parse_mode: 'HTML' });
     }
   });
-
+  
   bot.on('message', async (ctx) => {
     const step = ctx.session.step;
     const lang = ctx.session.language || 'ru';
     
-    if (step === 7 || step === 8) {
-      await ctx.reply(getText(lang, 'not_video'), { parse_mode: 'HTML' });
+    if ((step === 7 || step === 8) && !ctx.message.video && !ctx.message.video_note) {
+      await safeReply(ctx, getText(lang, 'not_video'), { parse_mode: 'HTML' });
     }
   });
   
@@ -311,11 +413,10 @@ export async function notifyUser(userId: number, status: 'approved' | 'rejected'
     const app = apps.find(a => a.user_id === userId);
     
     const lang = (user?.lang || user?.language || 'ru') as 'ru' | 'uz';
-    const name = app?.full_name || user?.first_name || 'Участник';
+    const safeName = (app?.full_name || 'Участник').replace(/</g, '&lt;').replace(/>/g, '&gt;');
     
-    const text = getText(lang, status, { name });
-    await bot.api.sendMessage(userId, text, { parse_mode: 'HTML' });
+    await bot.api.sendMessage(userId, getText(lang, status, { name: safeName }), { parse_mode: 'HTML' });
   } catch (e) {
-    console.error(`Failed to notify user ${userId}:`, e);
+    console.error('Failed to notify user:', e);
   }
 }
