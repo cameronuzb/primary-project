@@ -68,8 +68,17 @@ export async function initDb() {
     
     // Add columns if they don't exist
     try {
+      await pgPool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS language TEXT;`);
+      await pgPool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS full_name TEXT;`);
+      await pgPool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS age_city TEXT;`);
+      await pgPool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS social_link TEXT;`);
+      await pgPool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS lang_proficiency TEXT;`);
       await pgPool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS video_ru_id TEXT;`);
       await pgPool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS video_uz_id TEXT;`);
+      await pgPool.query(`ALTER TABLE applications ADD COLUMN IF NOT EXISTS full_name TEXT;`);
+      await pgPool.query(`ALTER TABLE applications ADD COLUMN IF NOT EXISTS age_city TEXT;`);
+      await pgPool.query(`ALTER TABLE applications ADD COLUMN IF NOT EXISTS social_link TEXT;`);
+      await pgPool.query(`ALTER TABLE applications ADD COLUMN IF NOT EXISTS lang_proficiency TEXT;`);
       await pgPool.query(`ALTER TABLE applications ADD COLUMN IF NOT EXISTS video_ru_id TEXT;`);
       await pgPool.query(`ALTER TABLE applications ADD COLUMN IF NOT EXISTS video_uz_id TEXT;`);
     } catch (e) {
@@ -119,10 +128,37 @@ export async function initDb() {
     
     // Add columns if they don't exist
     try {
+      sqliteDb.exec(`ALTER TABLE users ADD COLUMN language TEXT;`);
+    } catch (e) {}
+    try {
+      sqliteDb.exec(`ALTER TABLE users ADD COLUMN full_name TEXT;`);
+    } catch (e) {}
+    try {
+      sqliteDb.exec(`ALTER TABLE users ADD COLUMN age_city TEXT;`);
+    } catch (e) {}
+    try {
+      sqliteDb.exec(`ALTER TABLE users ADD COLUMN social_link TEXT;`);
+    } catch (e) {}
+    try {
+      sqliteDb.exec(`ALTER TABLE users ADD COLUMN lang_proficiency TEXT;`);
+    } catch (e) {}
+    try {
       sqliteDb.exec(`ALTER TABLE users ADD COLUMN video_ru_id TEXT;`);
     } catch (e) {}
     try {
       sqliteDb.exec(`ALTER TABLE users ADD COLUMN video_uz_id TEXT;`);
+    } catch (e) {}
+    try {
+      sqliteDb.exec(`ALTER TABLE applications ADD COLUMN full_name TEXT;`);
+    } catch (e) {}
+    try {
+      sqliteDb.exec(`ALTER TABLE applications ADD COLUMN age_city TEXT;`);
+    } catch (e) {}
+    try {
+      sqliteDb.exec(`ALTER TABLE applications ADD COLUMN social_link TEXT;`);
+    } catch (e) {}
+    try {
+      sqliteDb.exec(`ALTER TABLE applications ADD COLUMN lang_proficiency TEXT;`);
     } catch (e) {}
     try {
       sqliteDb.exec(`ALTER TABLE applications ADD COLUMN video_ru_id TEXT;`);
@@ -146,7 +182,8 @@ export async function getUser(userId: number) {
 export async function updateUser(userId: number, data: any) {
   const existing = await getUser(userId);
   const keys = Object.keys(data);
-  const values = Object.values(data);
+  if (keys.length === 0) return;
+  const values = Object.values(data).map(v => v === undefined ? null : v);
   
   if (!existing) {
     if (usePostgres) {
@@ -177,7 +214,8 @@ export async function updateUser(userId: number, data: any) {
 
 export async function createApplication(data: any) {
   const keys = Object.keys(data);
-  const values = Object.values(data);
+  if (keys.length === 0) return null;
+  const values = Object.values(data).map(v => v === undefined ? null : v);
   
   if (usePostgres) {
     const placeholders = keys.map((_, i) => `$${i + 1}`).join(', ');
