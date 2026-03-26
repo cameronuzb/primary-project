@@ -37,6 +37,9 @@ export async function initDb() {
         social_link TEXT,
         photo_file_id TEXT,
         video_file_id TEXT,
+        video_ru_id TEXT,
+        video_uz_id TEXT,
+        lang_proficiency TEXT,
         joined_at TIMESTAMP,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
@@ -49,6 +52,9 @@ export async function initDb() {
         social_link TEXT,
         photo_file_id TEXT,
         video_file_id TEXT,
+        video_ru_id TEXT,
+        video_uz_id TEXT,
+        lang_proficiency TEXT,
         status TEXT DEFAULT 'pending',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (user_id) REFERENCES users (id)
@@ -59,6 +65,16 @@ export async function initDb() {
         value TEXT
       );
     `);
+    
+    // Add columns if they don't exist
+    try {
+      await pgPool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS video_ru_id TEXT;`);
+      await pgPool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS video_uz_id TEXT;`);
+      await pgPool.query(`ALTER TABLE applications ADD COLUMN IF NOT EXISTS video_ru_id TEXT;`);
+      await pgPool.query(`ALTER TABLE applications ADD COLUMN IF NOT EXISTS video_uz_id TEXT;`);
+    } catch (e) {
+      console.error('Error adding columns to postgres:', e);
+    }
   } else {
     sqliteDb.exec(`
       CREATE TABLE IF NOT EXISTS users (
@@ -72,6 +88,9 @@ export async function initDb() {
         social_link TEXT,
         photo_file_id TEXT,
         video_file_id TEXT,
+        video_ru_id TEXT,
+        video_uz_id TEXT,
+        lang_proficiency TEXT,
         joined_at DATETIME,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
       );
@@ -84,6 +103,9 @@ export async function initDb() {
         social_link TEXT,
         photo_file_id TEXT,
         video_file_id TEXT,
+        video_ru_id TEXT,
+        video_uz_id TEXT,
+        lang_proficiency TEXT,
         status TEXT DEFAULT 'pending',
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (user_id) REFERENCES users (id)
@@ -94,6 +116,20 @@ export async function initDb() {
         value TEXT
       );
     `);
+    
+    // Add columns if they don't exist
+    try {
+      sqliteDb.exec(`ALTER TABLE users ADD COLUMN video_ru_id TEXT;`);
+    } catch (e) {}
+    try {
+      sqliteDb.exec(`ALTER TABLE users ADD COLUMN video_uz_id TEXT;`);
+    } catch (e) {}
+    try {
+      sqliteDb.exec(`ALTER TABLE applications ADD COLUMN video_ru_id TEXT;`);
+    } catch (e) {}
+    try {
+      sqliteDb.exec(`ALTER TABLE applications ADD COLUMN video_uz_id TEXT;`);
+    } catch (e) {}
   }
 }
 
