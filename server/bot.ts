@@ -105,16 +105,20 @@ export async function initBot(token: string) {
   bot.command('setoffer', async (ctx) => {
     // Check if admin
     const groupId = '-5208437302';
-    try {
-      const chatMember = await ctx.api.getChatMember(groupId, ctx.from.id);
-      if (chatMember.status !== 'creator' && chatMember.status !== 'administrator') {
-        await ctx.reply('⛔️ У вас нет прав администратора в группе для выполнения этой команды.');
+    const allowedAdmins = [768567874]; // Ваш Telegram ID
+    
+    if (!allowedAdmins.includes(ctx.from.id)) {
+      try {
+        const chatMember = await ctx.api.getChatMember(groupId, ctx.from.id);
+        if (chatMember.status !== 'creator' && chatMember.status !== 'administrator') {
+          await ctx.reply('⛔️ У вас нет прав администратора для выполнения этой команды.');
+          return;
+        }
+      } catch (e) {
+        console.error('Admin check error:', e);
+        await ctx.reply('⛔️ У вас нет прав для выполнения этой команды.');
         return;
       }
-    } catch (e) {
-      console.error('Admin check error:', e);
-      // Если бот не добавлен в группу или ID группы неверный, разрешим пока всем, 
-      // чтобы не блокировать функционал, либо можно добавить проверку по ID.
     }
 
     let document = ctx.message?.document;
